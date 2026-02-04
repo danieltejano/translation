@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class CreateTranslationRequest extends FormRequest
+class ImportTranslationRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,11 +22,10 @@ class CreateTranslationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'key' => 'required',
-            'group' => 'nullable',
-            'lang' => 'required|regex:/^[a-z]{2}(_[A-Z]{2})?$/i', 
-            'value' => 'required', 
-            'platform' => 'required|in:mobile,web,desktop'
+            'file' => 'required|file|mimes:json|max:10240',
+            'lang' => 'required|string|regex:/^[a-z]{2}(_[A-Z]{2})?$/i',
+            'platform' => 'nullable|string',
+            'replace_existing' => 'sometimes|boolean', 
         ];
     }
 }

@@ -5,11 +5,15 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Http\Requests\{
     CreateTranslationRequest,
+    ImportTranslationRequest,
     UpdateTranslationRequest,
 };
 use App\Models\Translation;
 use App\Http\Resources\TranslationResource;
 use App\TranslationParserTrait;
+use Exception;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class TranslateController extends Controller
 {
@@ -70,14 +74,19 @@ class TranslateController extends Controller
         ]);
     }
     
-    public function import(Request $request)
+    public function import(ImportTranslationRequest $request)
     {
-        $file = $request->file('translation');
+        $fields = $request->validated();
+
+
+        $file = $request->file('file');
         $language = $request->input('lang');
         $platform = $request->input('platform');
+        $policy = $request->input('replace_existing', false);
+    
 
-        $file_path = file_get_contents($file->getRealPath());
-        $json_content = json_decode($file_path, true);
+        // $file_path = file_get_contents($file->getRealPath());
+        $json_content = json_decode($file->get(), true);
 
         // Should validte JSON Structure here
         if(json_last_error() !== JSON_ERROR_NONE){
@@ -87,29 +96,76 @@ class TranslateController extends Controller
             ], 422);
         }
 
-        // Should validate JSON contains an array
-        if(!is_array($data)){
-            return response()->json([
-                'success' => false,
-                'message' => 'JSON file should contain an array or nested Object'
-            ]);
-        }
 
-        $translations = $this->parseFile($json_content, $platform, $language);
+        // for quick fix purposes platform is coalesced with web
+        $translations = $this->parseFile($json_content, $platform ?? 'web', $language);
 
         // Should check if parsed file is empty.
 
         if(empty($translations)){
             return response()->json([
                 'success' => false, 
-                'message' => 'No valid translations found.'
-            ]);
-        }
-        
-        foreach($translations as $translation){
-            Translation::create($translation);
+                'message' => 'No valid translations found in the file.'
+            ], 422);
         }
 
+        $policy_string = $policy ? 'true' : 'false';
+        
+        
+        Log::info("Begining Translation with Replace Existing Policy set to $policy_string");
+
+        DB::beginTransaction();
+
+        try{ 
+
+
+            $imported = 0;
+            $updated = 0;
+            $skipped = 0;
+
+            foreach($translations as $translation){
+                $existing = Translation::where('lang', $translation['lang'])
+                                        ->where('key', $translation['key'])
+                                        ->first();
+                $key = $translation['key'];
+                $value = $translation['value'];
+                $lang = $translation['lang'];
+                if($existing){
+
+                    if($policy){
+                        $existing->update(['value' => $translation['value']]);
+                        Log::info("Updated Translation $key for $lang with value $value");
+                        $updated++;
+                    }else{
+                        Log::alert("Skipping Translation $key for $lang with value $value");
+                        $skipped++;
+                    }
+                }else{
+                    Translation::create($translation);
+                    Log::info("Created Translation $key for $lang with value $value");
+                    $imported++;
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true, 
+                'message' => 'Translations imported successfully.',
+                'data' => [
+                    'lang' => $language, 
+                    'imported' => $imported,
+                    'updated' => $updated, 
+                    'skipped' => $skipped, 
+                    'total' => count($translations)
+                ]
+            ], 200);
+        }catch(Exception $e){
+            DB::rollback();
+
+            throw $e;
+        }
+        
     
     }
 
