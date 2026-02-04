@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('translations', function (Blueprint $table) {
             $table->id();
             $table->string('key');
+            $table->string('group')->nullable();
             $table->string('lang');
             $table->longText('value');
             $table->jsonb('platform');

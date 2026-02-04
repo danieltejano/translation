@@ -11,12 +11,13 @@ trait TranslationParserTrait
         foreach($data as $key => $value){
             if(is_array($value)){
                 $group = $grouping ? "{$grouping}.{$key}" : $key;
-                $translations = array_merge($translations, $this->parseFile($value, $lang, $group));
+                $translations = array_merge($translations, $this->parseFile($value, $platform, $lang, $group));
             }else{
                 $translations[] = [
                     'lang' => $lang,
                     'platform' => json_encode([$platform]),
-                    'key' => $grouping ?? $key,
+                    'group' => $grouping, 
+                    'key' => $key,
                     'value' => (string) $value
                 ];
             }
