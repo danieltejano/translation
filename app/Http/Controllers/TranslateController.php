@@ -80,11 +80,31 @@ class TranslateController extends Controller
         $json_content = json_decode($file_path, true);
 
         // Should validte JSON Structure here
+        if(json_last_error() !== JSON_ERROR_NONE){
+            return response()->json([
+                'success' => false, 
+                'message' => 'Invalid JSON File ' . json_last_error_msg()
+            ], 422);
+        }
+
         // Should validate JSON contains an array
+        if(!is_array($data)){
+            return response()->json([
+                'success' => false,
+                'message' => 'JSON file should contain an array or nested Object'
+            ]);
+        }
 
         $translations = $this->parseFile($json_content, $platform, $language);
 
         // Should check if parsed file is empty.
+
+        if(empty($translations)){
+            return response()->json([
+                'success' => false, 
+                'message' => 'No valid translations found.'
+            ]);
+        }
         
         foreach($translations as $translation){
             Translation::create($translation);
