@@ -1,59 +1,56 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+## Laravel Translation API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+### Prerequisites
+ - PHP 8.2+
+ - Composer
+ - SQLite, MySQL, PostgreSQL
 
-## About Laravel
+### Setup
+ 1. Install Dependencies
+    ```bash
+     composer install
+    ```
+ 2. Environment Setup
+    Configure necessary environment variables for both main .env file and env.testing for testing with PestPHP
+    ```bash
+    cp .env.example .env
+    php artisan key:generate
+    ```
+ 3. Database Setup
+    Run migrations for the database via the command below
+    ```bash
+    php artisan migrate
+    ```
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+### Running Tests
+  To Run tests please use the Laravel built in artisan command 
+  ```bash
+  php artisan test
+  ```
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
-
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
-
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
-
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-## Laravel Sponsors
-
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
-
-### Premium Partners
-
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
-
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+### Endpoints
+ - ### [GET]/api/translations
+    - provides the list of available translations in the API 
+    - Query Params:
+      - lang - indicates which language the translation is 
+      - platform - indicates which platform the translation is targeted.
+      - purpose - indicates for which function should the translation be used. (e.g. button.approve should translate to 'Approve' in en)
+      - value - actual translation.
+ - ### [POST]/api/translations
+    - allows an authenticated user to create a new translation
+    - Expected Payload
+      - purpose (required) - indicates for which function should the translation be used.
+      - lang (required) - indicates which language the translation is.
+      - platform (requried) - indicates which platform the translation is targeted.
+      - value (requried) - actual translation.
+ - ### [PUT]/api/translations
+    - allows an authenticated user to update an existing translation
+    - Expected Payload
+      - purpose (requried) - indicates for which function should the translation be used.
+      - lang (required) - indicates which language the translation is.
+      - platform (required) - indicates which platform the translation is targeted.
+      - value (required) - actual translation.
+ - ### [GET]/api/translations/{translation_id}
+    - allows an authenticated user to view an existing translation given a valid id.
+ - ### [DELETE]/api/translations/{translation_id}
+    - allows an authenticated user to delete an existing translation given a valid id.
