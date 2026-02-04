@@ -34,19 +34,19 @@
     - Query Params:
       - lang - indicates which language the translation is 
       - platform - indicates which platform the translation is targeted.
-      - purpose - indicates for which function should the translation be used. (e.g. button.approve should translate to 'Approve' in en)
+      - key - indicates for which function should the translation be used. (e.g. button.approve should translate to 'Approve' in en)
       - value - actual translation.
  - ### [POST]/api/translations
     - allows an authenticated user to create a new translation
     - Expected Payload
-      - purpose (required) - indicates for which function should the translation be used.
+      - key (required) - indicates for which function should the translation be used.
       - lang (required) - indicates which language the translation is.
       - platform (requried) - indicates which platform the translation is targeted.
       - value (requried) - actual translation.
  - ### [PUT]/api/translations
     - allows an authenticated user to update an existing translation
     - Expected Payload
-      - purpose (requried) - indicates for which function should the translation be used.
+      - key (requried) - indicates for which function should the translation be used.
       - lang (required) - indicates which language the translation is.
       - platform (required) - indicates which platform the translation is targeted.
       - value (required) - actual translation.
