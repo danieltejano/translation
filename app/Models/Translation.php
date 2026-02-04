@@ -10,7 +10,7 @@ class Translation extends Model
     use HasFactory;
 
     protected $fillable = [
-        'purpose', 
+        'key', 
         'lang', 
         'value', 
         'platform',

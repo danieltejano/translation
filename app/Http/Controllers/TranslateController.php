@@ -9,9 +9,12 @@ use App\Http\Requests\{
 };
 use App\Models\Translation;
 use App\Http\Resources\TranslationResource;
+use App\TranslationParserTrait;
 
 class TranslateController extends Controller
 {
+    use TranslationParserTrait;
+
     public function index(Request $request){
         $translations = Translation::when($request->query('lang'), function($query) use($request){
             $query->whereLike('lang', $request->query('lang'));
@@ -19,10 +22,10 @@ class TranslateController extends Controller
         ->when($request->query('platform'), function($query) use ($request){
             $query->whereIn('platform', [$request->query('platform')]);
         })
-        ->when($request->query('purpose'), function($query) use($request){
-            $search_term = $request->query('purpose');
+        ->when($request->query('key'), function($query) use($request){
+            $search_term = $request->query('key');
             $query->whereLike('value', "%$search_term%")
-                    ->OrWhereLike('purpose', "%$search_term%");
+                    ->OrWhereLike('key', "%$search_term%");
         })->paginate(15);
 
         return $translations->toResourceCollection();
@@ -39,7 +42,7 @@ class TranslateController extends Controller
 
         return response()->json([
             'message' => 'Successfully Created new Translation',
-            'purpose' => $translation->purpose, 
+            'key' => $translation->key, 
             'translation' => $translation->value, 
         ]);
     }
@@ -52,8 +55,8 @@ class TranslateController extends Controller
         $translation->update($fields);
 
         return response()->json([
-            'message' => "Successfully Updated Translation for $translation->purpose",
-            'purpose' => $translation->purpose,
+            'message' => "Successfully Updated Translation for $translation->key",
+            'key' => $translation->key,
             'old_translation' => $original_translation['value'],
             'new_translation' => $translation->value
         ]);
@@ -63,8 +66,32 @@ class TranslateController extends Controller
         $translation->delete();
 
         return response()->json([
-            'message' => "Successfully Deleted Translation for $translation->purpose"
+            'message' => "Successfully Deleted Translation for $translation->key"
         ]);
     }
+    
+    public function import(Request $request)
+    {
+        $file = $request->file('translation');
+        $language = $request->input('lang');
+        $platform = $request->input('platform');
+
+        $file_path = file_get_contents($file->getRealPath());
+        $json_content = json_decode($file_path, true);
+
+        // Should validte JSON Structure here
+        // Should validate JSON contains an array
+
+        $translations = $this->parseFile($json_content, $platform, $language);
+
+        // Should check if parsed file is empty.
+        
+        foreach($translations as $translation){
+            Translation::create($translation);
+        }
+
+    
+    }
+
     
 }

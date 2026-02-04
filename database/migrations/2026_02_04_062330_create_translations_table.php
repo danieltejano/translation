@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('translations', function (Blueprint $table) {
             $table->id();
-            $table->string('purpose');
+            $table->string('key');
             $table->string('lang');
             $table->longText('value');
             $table->jsonb('platform');

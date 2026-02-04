@@ -19,7 +19,7 @@ class TranslationFactory extends Factory
         $languages = ['en', 'es', 'fr', 'de', 'it', 'pt', 'ja', 'zh', 'ko', 'ar'];
         $platforms = ['web', 'mobile', 'desktop', 'api'];
         
-        $purposes = [
+        $keys = [
             'button.submit',
             'button.cancel',
             'button.save',
@@ -52,21 +52,21 @@ class TranslationFactory extends Factory
             'error.403',
         ];
 
-        $purpose = fake()->randomElement($purposes);
+        $key = fake()->randomElement($keys);
         $lang = fake()->randomElement($languages);
 
         return [
             'lang' => $lang,
-            'purpose' => $purpose,
-            'value' => $this->getTranslationValue($purpose, $lang),
+            'key' => $key,
+            'value' => $this->getTranslationValue($key, $lang),
             'platform' => fake()->randomElement($platforms),
         ];
     }
 
     /**
-     * Get translation value based on purpose and language
+     * Get translation value based on key and language
      */
-    private function getTranslationValue(string $purpose, string $lang): string
+    private function getTranslationValue(string $key, string $lang): string
     {
         $translations = [
             'en' => [
@@ -168,7 +168,7 @@ class TranslationFactory extends Factory
         ];
 
         // Return translation if exists, otherwise generate a generic one
-        return $translations[$lang][$purpose] ?? fake()->sentence(3);
+        return $translations[$lang][$key] ?? fake()->sentence(3);
     }
 
     /**
@@ -235,10 +235,10 @@ class TranslationFactory extends Factory
         ];
 
         return $this->state(function (array $attributes) use ($buttons) {
-            $purpose = fake()->randomElement($buttons);
+            $key = fake()->randomElement($buttons);
             return [
-                'purpose' => $purpose,
-                'value' => $this->getTranslationValue($purpose, $attributes['lang']),
+                'key' => $key,
+                'value' => $this->getTranslationValue($key, $attributes['lang']),
             ];
         });
     }
@@ -256,10 +256,10 @@ class TranslationFactory extends Factory
         ];
 
         return $this->state(function (array $attributes) use ($validations) {
-            $purpose = fake()->randomElement($validations);
+            $key = fake()->randomElement($validations);
             return [
-                'purpose' => $purpose,
-                'value' => $this->getTranslationValue($purpose, $attributes['lang']),
+                'key' => $key,
+                'value' => $this->getTranslationValue($key, $attributes['lang']),
             ];
         });
     }
@@ -278,10 +278,10 @@ class TranslationFactory extends Factory
         ];
 
         return $this->state(function (array $attributes) use ($navItems) {
-            $purpose = fake()->randomElement($navItems);
+            $key = fake()->randomElement($navItems);
             return [
-                'purpose' => $purpose,
-                'value' => $this->getTranslationValue($purpose, $attributes['lang']),
+                'key' => $key,
+                'value' => $this->getTranslationValue($key, $attributes['lang']),
             ];
         });
     }

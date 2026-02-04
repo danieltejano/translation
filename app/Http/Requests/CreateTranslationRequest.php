@@ -22,7 +22,7 @@ class CreateTranslationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'purpose' => 'required', 
+            'key' => 'required', 
             'lang' => 'required|regex:/^[a-z]{2}(_[A-Z]{2})?$/i', 
             'value' => 'required', 
             'platform' => 'required|in:mobile,web,desktop'

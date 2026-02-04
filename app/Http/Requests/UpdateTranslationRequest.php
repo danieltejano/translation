@@ -22,7 +22,7 @@ class UpdateTranslationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'purpose' => 'required', 
+            'key' => 'required', 
             'lang' => 'nullable|regex:/^[a-z]{2}(_[A-Z]{2})?$/i', 
             'value' => 'required', 
             'platform' => 'nullable|in:mobile,web,desktop'
