@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AuthenticationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TranslateController;
@@ -11,4 +12,11 @@ Route::middleware('auth:sanctum')->prefix('translations')->group(function(){
     Route::post('', [TranslateController::class, 'create'])->name('translation.create');
     Route::put('{translation}', [TranslateController::class, 'update'])->name('translation.update');
     Route::delete('{translation}', [TranslateController::class, 'delete'])->name('translation.show');
+});
+
+
+Route::middleware('throttle:60,1')->group(function(){
+    Route::post('/login', [AuthenticationController::class, 'login'])->name('auth.login');
+    Route::middleware('auth:sanctum')->post('/logout', [AuthenticationController::class, 'logout'])->name('auth.logout');
+    Route::post('/register', [AuthenticationController::class, 'register'])->name('auth.register');
 });
