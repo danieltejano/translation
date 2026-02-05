@@ -4,19 +4,19 @@ namespace App;
 
 trait TranslationParserTrait
 {
-    private function parseFile(array $data, string $platform, string $lang, ?string $grouping = null) : array
+    private function parseFile(array $data, string $platform, string $lang, ?string $grouping = null): array
     {
         $translations = [];
 
-        foreach($data as $key => $value){
-            if(is_array($value)){
+        foreach ($data as $key => $value) {
+            if (is_array($value)) {
                 $group = $grouping ? "{$grouping}.{$key}" : $key;
                 $translations = array_merge($translations, $this->parseFile($value, $platform, $lang, $group));
-            }else{
+            } else {
                 $translations[] = [
                     'lang' => $lang,
                     'platform' => json_encode([$platform]),
-                    'group' => $grouping, 
+                    'group' => $grouping,
                     'key' => $key,
                     'value' => (string) $value
                 ];
@@ -26,11 +26,11 @@ trait TranslationParserTrait
         return $translations;
     }
 
-    private function groupTranslations($translations) : array
+    private function groupTranslations($translations, $should_group = true): array
     {
         $data = [];
         foreach ($translations as $translation) {
-            if ($translation->group) {
+            if ($should_group && $translation->group) {
                 // Handle nested groups
                 $groups = explode('.', $translation->group);
                 $current = &$data;
