@@ -190,7 +190,30 @@ class TranslateController extends Controller
 
     public function export(Request $request, string $lang)
     {
-        $translations = Translation::where('lang', $lang)->get();
+        $translations = Translation::where('lang', $lang)
+            ->when($request->query('group'), function ($query) use ($request) {
+                $search_term = $request->query('group');
+                $query->whereLike('group', "%$search_term%");
+            })
+            ->when($request->query('platform'), function ($query) use ($request) {
+                $platforms = explode(',', $request->query('platform'));
+                $query->where(function ($inner_query) use ($platforms) {
+                    foreach ($platforms as $platform) {
+                        $inner_query->orWhereJsonContains('platform', $platform);
+                    }
+                });
+            })
+            ->when($request->query('key'), function ($query) use ($request) {
+                $search_term = $request->query('key');
+                $query->where(function ($inner_query) use ($search_term) {
+                    $inner_query->whereLike('value', "%$search_term%")
+                        ->OrWhereLike('key', "%$search_term%");
+                });
+            })
+            ->when($request->query('value'), function ($query) use ($request) {
+                $search_term = $request->query('value');
+                $query->whereLike('value', "%$search_term%");
+            })->get();
 
         if ($translations->isEmpty()) {
             return response()->json([

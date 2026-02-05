@@ -1246,5 +1246,483 @@ describe('Translation Export', function () {
         // Compare data structures
         expect($reExportedData)->toEqual($exportedData);
     });
+
+    test('exports only translations for specified platform', function () {
+        // Create web platform translations
+        Translation::create([
+            'lang' => 'en_US',
+            'platform' => json_encode(['web']),
+            'group' => 'common',
+            'key' => 'ok',
+            'value' => 'OK',
+        ]);
+
+        // Create mobile platform translations
+        Translation::create([
+            'lang' => 'en_US',
+            'platform' => json_encode(['mobile']),
+            'group' => 'common',
+            'key' => 'ok',
+            'value' => 'OK Mobile',
+        ]);
+
+        // Create desktop platform translations
+        Translation::create([
+            'lang' => 'en_US',
+            'platform' => json_encode(['desktop']),
+            'group' => 'common',
+            'key' => 'ok',
+            'value' => 'OK Desktop',
+        ]);
+
+        $response = actingAs($this->user)->getJson('/api/translations/export/en_US?platform=web');
+
+        $response->assertStatus(200)
+            ->assertJsonPath('data.common.ok', 'OK');
+
+        // Verify only web platform translation is returned
+        expect($response->json('data.common.ok'))->toBe('OK')
+            ->and($response->json('data.common.ok'))->not->toBe('OK Mobile')
+            ->and($response->json('data.common.ok'))->not->toBe('OK Desktop');
+    });
+
+    test('exports translations for multiple platforms when translation has multiple platforms', function () {
+        // Create translation available on both web and mobile
+        Translation::create([
+            'lang' => 'en_US',
+            'platform' => json_encode(['web', 'mobile']),
+            'group' => 'common',
+            'key' => 'shared',
+            'value' => 'Shared Value',
+        ]);
+
+        // Create web-only translation
+        Translation::create([
+            'lang' => 'en_US',
+            'platform' => json_encode(['web']),
+            'group' => 'common',
+            'key' => 'web_only',
+            'value' => 'Web Only',
+        ]);
+
+        // Test web platform export
+        $webResponse = actingAs($this->user)->getJson('/api/translations/export/en_US?platform=web');
+        $webResponse->assertStatus(200);
+        $webData = $webResponse->json('data');
+        expect($webData['common'])->toHaveKeys(['shared', 'web_only'])
+            ->and($webData['common']['shared'])->toBe('Shared Value')
+            ->and($webData['common']['web_only'])->toBe('Web Only');
+
+        // Test mobile platform export
+        $mobileResponse = actingAs($this->user)->getJson('/api/translations/export/en_US?platform=mobile');
+        $mobileResponse->assertStatus(200);
+        $mobileData = $mobileResponse->json('data');
+        expect($mobileData['common'])->toHaveKey('shared')
+            ->and($mobileData['common'])->not->toHaveKey('web_only')
+            ->and($mobileData['common']['shared'])->toBe('Shared Value');
+    });
+
+    test('returns 404 when no translations found for specified platform', function () {
+        Translation::create([
+            'lang' => 'en_US',
+            'platform' => json_encode(['web']),
+            'group' => 'common',
+            'key' => 'ok',
+            'value' => 'OK',
+        ]);
+
+        $response = actingAs($this->user)->getJson('/api/translations/export/en_US?platform=desktop');
+
+        $response->assertStatus(404)
+            ->assertJson([
+                'success' => false,
+                'message' => 'No translations found for lang: en_US',
+            ]);
+    });
+
+    test('exports all platforms when platform parameter is not provided', function () {
+        Translation::create([
+            'lang' => 'en_US',
+            'platform' => json_encode(['web']),
+            'group' => 'common',
+            'key' => 'web_key',
+            'value' => 'Web Value',
+        ]);
+
+        Translation::create([
+            'lang' => 'en_US',
+            'platform' => json_encode(['mobile']),
+            'group' => 'common',
+            'key' => 'mobile_key',
+            'value' => 'Mobile Value',
+        ]);
+
+        Translation::create([
+            'lang' => 'en_US',
+            'platform' => json_encode(['desktop']),
+            'group' => 'common',
+            'key' => 'desktop_key',
+            'value' => 'Desktop Value',
+        ]);
+
+        $response = actingAs($this->user)->getJson('/api/translations/export/en_US');
+
+        $response->assertStatus(200);
+
+        $data = $response->json('data');
+
+        expect($data['common'])->toHaveKeys(['web_key', 'mobile_key', 'desktop_key'])
+            ->and($data['common']['web_key'])->toBe('Web Value')
+            ->and($data['common']['mobile_key'])->toBe('Mobile Value')
+            ->and($data['common']['desktop_key'])->toBe('Desktop Value');
+    });
+
+    test('filters platform correctly with group and key searches', function () {
+        Translation::create([
+            'lang' => 'en_US',
+            'platform' => json_encode(['web']),
+            'group' => 'auth',
+            'key' => 'login',
+            'value' => 'Web Login',
+        ]);
+
+        Translation::create([
+            'lang' => 'en_US',
+            'platform' => json_encode(['mobile']),
+            'group' => 'auth',
+            'key' => 'login',
+            'value' => 'Mobile Login',
+        ]);
+
+        // Search with platform and group filters
+        $response = actingAs($this->user)->getJson('/api/translations/export/en_US?platform=web&group=auth');
+
+        $response->assertStatus(200);
+
+        $data = $response->json('data');
+
+        expect($data['auth']['login'])->toBe('Web Login')
+            ->and($data['auth']['login'])->not->toBe('Mobile Login');
+    });
+
+    test('exports platform-specific nested structures correctly', function () {
+        Translation::create([
+            'lang' => 'en_US',
+            'platform' => json_encode(['web']),
+            'group' => 'validation.custom',
+            'key' => 'email',
+            'value' => 'Web Email Validation',
+        ]);
+
+        Translation::create([
+            'lang' => 'en_US',
+            'platform' => json_encode(['mobile']),
+            'group' => 'validation.custom',
+            'key' => 'email',
+            'value' => 'Mobile Email Validation',
+        ]);
+
+        Translation::create([
+            'lang' => 'en_US',
+            'platform' => json_encode(['web', 'mobile']),
+            'group' => 'validation',
+            'key' => 'required',
+            'value' => 'Required Field',
+        ]);
+
+        $webResponse = actingAs($this->user)->getJson('/api/translations/export/en_US?platform=web');
+        
+        $webResponse->assertStatus(200);
+        $webData = $webResponse->json('data');
+
+        expect($webData['validation']['custom']['email'])->toBe('Web Email Validation')
+            ->and($webData['validation']['required'])->toBe('Required Field');
+
+        $mobileResponse = actingAs($this->user)->getJson('/api/translations/export/en_US?platform=mobile');
+        
+        $mobileResponse->assertStatus(200);
+        $mobileData = $mobileResponse->json('data');
+
+        expect($mobileData['validation']['custom']['email'])->toBe('Mobile Email Validation')
+            ->and($mobileData['validation']['required'])->toBe('Required Field');
+    });
+
+    test('platform filter works with null groups', function () {
+        Translation::create([
+            'lang' => 'en_US',
+            'platform' => json_encode(['web']),
+            'group' => null,
+            'key' => 'web_app_name',
+            'value' => 'Web App',
+        ]);
+
+        Translation::create([
+            'lang' => 'en_US',
+            'platform' => json_encode(['mobile']),
+            'group' => null,
+            'key' => 'mobile_app_name',
+            'value' => 'Mobile App',
+        ]);
+
+        $response = actingAs($this->user)->getJson('/api/translations/export/en_US?platform=web');
+
+        $response->assertStatus(200);
+
+        $data = $response->json('data');
+
+        expect($data)->toHaveKey('web_app_name')
+            ->and($data)->not->toHaveKey('mobile_app_name')
+            ->and($data['web_app_name'])->toBe('Web App');
+    });
+
+    test('exports correct count when filtering by platform', function () {
+        // Create 10 web translations
+        for ($i = 0; $i < 10; $i++) {
+            Translation::create([
+                'lang' => 'en_US',
+                'platform' => json_encode(['web']),
+                'group' => 'common',
+                'key' => 'web_key_' . $i,
+                'value' => 'Web Value ' . $i,
+            ]);
+        }
+
+        // Create 5 mobile translations
+        for ($i = 0; $i < 5; $i++) {
+            Translation::create([
+                'lang' => 'en_US',
+                'platform' => json_encode(['mobile']),
+                'group' => 'common',
+                'key' => 'mobile_key_' . $i,
+                'value' => 'Mobile Value ' . $i,
+            ]);
+        }
+
+        $webResponse = actingAs($this->user)->getJson('/api/translations/export/en_US?platform=web');
+        $webResponse->assertStatus(200);
+        $webData = $webResponse->json('data.common');
+        expect(count($webData))->toBe(10);
+
+        $mobileResponse = actingAs($this->user)->getJson('/api/translations/export/en_US?platform=mobile');
+        $mobileResponse->assertStatus(200);
+        $mobileData = $mobileResponse->json('data.common');
+        expect(count($mobileData))->toBe(5);
+
+        $allResponse = actingAs($this->user)->getJson('/api/translations/export/en_US');
+        $allResponse->assertStatus(200);
+        $allData = $allResponse->json('data.common');
+        expect(count($allData))->toBe(15);
+    });
+
+    test('handles invalid platform parameter gracefully', function () {
+        Translation::create([
+            'lang' => 'en_US',
+            'platform' => json_encode(['web']),
+            'group' => 'common',
+            'key' => 'ok',
+            'value' => 'OK',
+        ]);
+
+        $response = actingAs($this->user)->getJson('/api/translations/export/en_US?platform=invalid_platform');
+
+        $response->assertStatus(404)
+            ->assertJson([
+                'success' => false,
+                'message' => 'No translations found for lang: en_US',
+            ]);
+    });
+
+    test('platform filter combined with search terms works correctly', function () {
+        Translation::create([
+            'lang' => 'en_US',
+            'platform' => json_encode(['web']),
+            'group' => 'common',
+            'key' => 'save_button',
+            'value' => 'Web Save',
+        ]);
+
+        Translation::create([
+            'lang' => 'en_US',
+            'platform' => json_encode(['mobile']),
+            'group' => 'common',
+            'key' => 'save_button',
+            'value' => 'Mobile Save',
+        ]);
+
+        Translation::create([
+            'lang' => 'en_US',
+            'platform' => json_encode(['web']),
+            'group' => 'common',
+            'key' => 'cancel',
+            'value' => 'Cancel',
+        ]);
+
+        // Assuming your controller supports search terms along with platform
+        $response = actingAs($this->user)->getJson('/api/translations/export/en_US?platform=web&key=save');
+
+        $response->assertStatus(200);
+
+        $data = $response->json('data');
+
+        expect($data['common'])->toHaveKey('save_button')
+            ->and($data['common']['save_button'])->toBe('Web Save')
+            ->and($data['common'])->not->toHaveKey('cancel');
+    });
+
+    test('platform array with single value works correctly', function () {
+        Translation::create([
+            'lang' => 'en_US',
+            'platform' => json_encode(['web']),
+            'group' => 'common',
+            'key' => 'single',
+            'value' => 'Single Platform',
+        ]);
+
+        $response = actingAs($this->user)->getJson('/api/translations/export/en_US?platform=web');
+
+        $response->assertStatus(200)
+            ->assertJsonPath('data.common.single', 'Single Platform');
+    });
+
+    test('exports maintain platform integrity across multiple groups', function () {
+        // Group 1 - web only
+        Translation::create([
+            'lang' => 'en_US',
+            'platform' => json_encode(['web']),
+            'group' => 'group1',
+            'key' => 'key1',
+            'value' => 'Value 1',
+        ]);
+
+        // Group 2 - mobile only
+        Translation::create([
+            'lang' => 'en_US',
+            'platform' => json_encode(['mobile']),
+            'group' => 'group2',
+            'key' => 'key2',
+            'value' => 'Value 2',
+        ]);
+
+        // Group 3 - both platforms
+        Translation::create([
+            'lang' => 'en_US',
+            'platform' => json_encode(['web', 'mobile']),
+            'group' => 'group3',
+            'key' => 'key3',
+            'value' => 'Value 3',
+        ]);
+
+        $webResponse = actingAs($this->user)->getJson('/api/translations/export/en_US?platform=web');
+        $webData = $webResponse->json('data');
+
+        expect($webData)->toHaveKeys(['group1', 'group3'])
+            ->and($webData)->not->toHaveKey('group2');
+
+        $mobileResponse = actingAs($this->user)->getJson('/api/translations/export/en_US?platform=mobile');
+        $mobileData = $mobileResponse->json('data');
+
+        expect($mobileData)->toHaveKeys(['group2', 'group3'])
+            ->and($mobileData)->not->toHaveKey('group1');
+    });
+
+    test('empty platform array is handled correctly', function () {
+        Translation::create([
+            'lang' => 'en_US',
+            'platform' => json_encode([]),
+            'group' => 'common',
+            'key' => 'empty_platform',
+            'value' => 'Empty Platform Value',
+        ]);
+
+        Translation::create([
+            'lang' => 'en_US',
+            'platform' => json_encode(['web']),
+            'group' => 'common',
+            'key' => 'web_key',
+            'value' => 'Web Value',
+        ]);
+
+        $response = actingAs($this->user)->getJson('/api/translations/export/en_US?platform=web');
+
+        $response->assertStatus(200);
+
+        $data = $response->json('data');
+
+        expect($data['common'])->toHaveKey('web_key')
+            ->and($data['common'])->not->toHaveKey('empty_platform');
+    });
+
+    test('platform filter respects deeply nested group structures', function () {
+        Translation::create([
+            'lang' => 'en_US',
+            'platform' => json_encode(['web']),
+            'group' => 'validation.rules.email.format',
+            'key' => 'invalid',
+            'value' => 'Web Email Format Invalid',
+        ]);
+
+        Translation::create([
+            'lang' => 'en_US',
+            'platform' => json_encode(['mobile']),
+            'group' => 'validation.rules.email.format',
+            'key' => 'invalid',
+            'value' => 'Mobile Email Format Invalid',
+        ]);
+
+        $response = actingAs($this->user)->getJson('/api/translations/export/en_US?platform=web');
+
+        $response->assertStatus(200);
+
+        $data = $response->json('data');
+
+        expect($data['validation']['rules']['email']['format']['invalid'])
+            ->toBe('Web Email Format Invalid');
+    });
+
+    test('export by platform produces valid re-importable JSON', function () {
+        Translation::create(['platform' => json_encode(['web']), 'lang' => 'en_US', 'group' => 'common', 'key' => 'ok', 'value' => 'OK']);
+        Translation::create(['platform' => json_encode(['web']), 'lang' => 'en_US', 'group' => 'auth', 'key' => 'login', 'value' => 'Log In']);
+        Translation::create(['platform' => json_encode(['mobile']), 'lang' => 'en_US', 'group' => 'common', 'key' => 'ok', 'value' => 'OK Mobile']);
+
+        $response = actingAs($this->user)->getJson('/api/translations/export/en_US?platform=web');
+
+        $response->assertStatus(200);
+
+        $exportedData = $response->json('data');
+
+        // Verify it's valid JSON
+        $jsonString = json_encode($exportedData);
+        expect($jsonString)->not->toBeFalse()
+            ->and(json_decode($jsonString, true))->toEqual($exportedData);
+
+        // Verify only web platform data is included
+        expect($exportedData['common']['ok'])->toBe('OK')
+            ->and($exportedData)->toHaveKey('auth');
+    });
+
+    test('multiple platforms in single translation are queried with OR logic', function () {
+        Translation::create([
+            'lang' => 'en_US',
+            'platform' => json_encode(['web', 'mobile', 'desktop']),
+            'group' => 'common',
+            'key' => 'multi_platform',
+            'value' => 'Available Everywhere',
+        ]);
+
+        // Should be found when querying for web
+        $webResponse = actingAs($this->user)->getJson('/api/translations/export/en_US?platform=web');
+        $webResponse->assertStatus(200)
+            ->assertJsonPath('data.common.multi_platform', 'Available Everywhere');
+
+        // Should be found when querying for mobile
+        $mobileResponse = actingAs($this->user)->getJson('/api/translations/export/en_US?platform=mobile');
+        $mobileResponse->assertStatus(200)
+            ->assertJsonPath('data.common.multi_platform', 'Available Everywhere');
+
+        // Should be found when querying for desktop
+        $desktopResponse = actingAs($this->user)->getJson('/api/translations/export/en_US?platform=desktop');
+        $desktopResponse->assertStatus(200)
+            ->assertJsonPath('data.common.multi_platform', 'Available Everywhere');
+    });
 })->group('translation-export');
 

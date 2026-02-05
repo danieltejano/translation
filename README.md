@@ -52,6 +52,7 @@ This lean structure allows for rapid expansion and the addition of new features 
  - ### [GET]/api/translations
     - provides the list of available translations in the API 
     - Query Params:
+      - `group` (nullable) - allows export filtering of translations via group.
       - `lang` - indicates which language the translation is 
       - `platform` - indicates which platform the translation is targeted.
       - `key` - indicates for which function should the translation be used. (e.g. button.approve should translate to 'Approve' in en)
@@ -71,18 +72,25 @@ This lean structure allows for rapid expansion and the addition of new features 
       - `lang` (nullable) - indicates which language the translation is.
       - `platform` (nullable) - indicates which platform the translation is targeted.
       - `value` (required) - actual translation.
+      - `group` (nullable) - indicates which function group should the translation be assigned into.
  - ### [GET]/api/translations/{translation_id}
     - allows an authenticated user to view an existing translation given a valid id.
  - ### [DELETE]/api/translations/{translation_id}
     - allows an authenticated user to delete an existing translation given a valid id.
  - ### [POST]/api/translations/import
     - allows an authenticated user to import in bulk translations from a json file.
+    - Expected Payload
        - `file` (required) - file payload should be named file and will be validated bioth in structure or if the file is empty
        - `lang` (required) - should be a valid localization code, determines what locale should the translations be assigned to.
        - `platform` (required) - should be a string separated by commas that indicate which platforms these translations are targeted for.
        - `replace_existing` (nullable) - boolean value of the policy in which existing records should be treated if true importing translations will be updated and will retain their original id but have their values updated. Else existing translations will be skipped.
  - ### [GET]/api/translations/exort/{lang}
     - allows an authenticated user to export saved translations into a `locale_{lang}.json` file
+    - Query Params:
+       - `group` (nullable) - allows export filtering of translations via group.
+       - `platform` (nullable) - allows export filtering of translations via platform.
+       - `key` (nullable) - allows export filtering of translations via key.
+       - `value` (nullable) - allows export filtering of translations via value.
        - `lang` (required) - should be a valid localization code that corresponds to the locale to be exported.
        - `download_file` (nullable) - boolean value that decides if the endpoint should send a file or return with a json http response.
        - `flatten` (nullable) - boolean value that dictates if the data should be in a flat array or not. 
