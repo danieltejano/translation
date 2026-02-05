@@ -12,7 +12,8 @@ use Illuminate\Validation\ValidationException;
 
 class AuthenticationController extends Controller
 {
-    public function login(LoginRequest $request){
+    public function login(LoginRequest $request)
+    {
         $fields = $request->validated();
 
         $request->validate([
@@ -20,26 +21,20 @@ class AuthenticationController extends Controller
             'password' => 'required',
             'device_name' => 'required',
         ]);
-    
         $user = User::where('email', $request->email)->first();
-    
         if (! $user || ! Hash::check($request->password, $user->password)) {
             throw ValidationException::withMessages([
                 'email' => ['The provided credentials are incorrect.'],
             ]);
         }
-    
         return response()->json([
-            'user' => [
-                'id' => $user->id, 
-                'name' => $user->name, 
-                'email' => $user->email,
-            ],
+            'user' => new AuthenticatedUserResource($user),
             'token' => $user->createToken($request->device_name)->plainTextToken
         ]);
     }
 
-    public function logout(Request $request){
+    public function logout(Request $request)
+    {
         $user = $request->user();
 
         $user->currentAccessToken()->delete();
@@ -50,15 +45,14 @@ class AuthenticationController extends Controller
     }
 
 
-    public function register(RegisterRequest $request){
+    public function register(RegisterRequest $request)
+    {
         $fields = $request->validated();
-         
         $user = User::create($fields);
-
         return response()->json([
             'user' => [
-                'id' => $user->id, 
-                'name' => $user->name, 
+                'id' => $user->id,
+                'name' => $user->name,
                 'email' => $user->email,
             ],
             'token' => $user->createToken('registertion_token')->plainTextToken
