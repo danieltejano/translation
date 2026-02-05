@@ -59,7 +59,7 @@ class TranslationFactory extends Factory
             'lang' => $lang,
             'key' => $key,
             'value' => $this->getTranslationValue($key, $lang),
-            'platform' => fake()->randomElement($platforms),
+            'platform' => json_encode([fake()->randomElement($platforms)]),
         ];
     }
 

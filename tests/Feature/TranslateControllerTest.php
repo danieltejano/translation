@@ -64,11 +64,11 @@ describe('Translation CRUD Operataions', function(){
     test('it can filter by platform', function () {
         Translation::factory()->create([
             'lang' => 'en',
-            'platform' => 'web'
+            'platform' => json_encode(['web'])
         ]);
         Translation::factory()->create([
             'lang' => 'en',
-            'platform' => 'mobile'
+            'platform' => json_encode(['mobile'])
         ]);
 
         $response = actingAs($this->user)
@@ -76,7 +76,7 @@ describe('Translation CRUD Operataions', function(){
 
         $response->assertStatus(200);
         $response->assertJsonCount(1, 'data');
-        $response->assertJsonFragment(['platform' => 'web']);
+        $response->assertJsonFragment(['platform' => ['web']]);
     });
 
     test('it paginates results', function () {
@@ -97,17 +97,17 @@ describe('Translation CRUD Operataions', function(){
     test('it can handle complex filtering', function () {
         Translation::factory()->create([
             'lang' => 'en',
-            'platform' => 'web',
+            'platform' => json_encode(['web']),
             'value' => 'Hello World'
         ]);
         Translation::factory()->create([
             'lang' => 'en',
-            'platform' => 'mobile',
+            'platform' => json_encode(['mobile']),
             'value' => 'Hello Mobile'
         ]);
         Translation::factory()->create([
             'lang' => 'es',
-            'platform' => 'web',
+            'platform' => json_encode(['web']),
             'value' => 'Hola Mundo'
         ]);
 
@@ -118,7 +118,7 @@ describe('Translation CRUD Operataions', function(){
         $response->assertJsonCount(1, 'data');
         $response->assertJsonFragment([
             'lang' => 'en',
-            'platform' => 'web',
+            'platform' => ['web'],
             'value' => 'Hello World'
         ]);
     });
@@ -166,12 +166,11 @@ describe('Translation CRUD Operataions', function(){
             'message' => 'Successfully Created new Translation',
             'key' => 'greeting'
         ]);
-        
         assertDatabaseHas('translations', [
             'lang' => 'en',
             'key' => 'greeting',
             'value' => 'Hello World',
-            'platform' => 'web'
+            'platform' => json_encode(['web'])
         ]);
     });
 
@@ -287,7 +286,7 @@ describe('Translation CRUD Operataions', function(){
             ->postJson('/api/translations', $data);
 
         $response->assertStatus(200);
-        assertDatabaseHas('translations', ['platform' => $platform]);
+        assertDatabaseHas('translations', ['platform' => json_encode([$platform])]);
     })->with(['web', 'mobile', 'desktop']);
 });
 
@@ -398,7 +397,7 @@ describe('Translation Import', function () {
             'lang' => 'en_US',
             'group' => 'common',
             'key' => 'ok',
-            'platform' => 'web',
+            'platform' => json_encode(['web']),
             'value' => 'Original OK',
         ]);
 
@@ -432,7 +431,7 @@ describe('Translation Import', function () {
             'lang' => 'en_US',
             'group' => 'common',
             'key' => 'ok',
-            'platform' => 'web',
+            'platform' => json_encode(['web']),
             'value' => 'Original OK',
         ]);
 
@@ -623,7 +622,7 @@ describe('Translation Import', function () {
             'lang' => 'en_US',
             'group' => 'common',
             'key' => 'ok',
-            'platform' => 'web',
+            'platform' => json_encode(['web']),
             'value' => 'OK',
         ]);
 
@@ -680,9 +679,9 @@ describe('Translation Import', function () {
         Storage::fake('local');
 
         Translation::create([
-            'platform' => 'web',
+            'platform' => json_encode(['web']),
              'lang' => 'en_US', 'group' => 'common', 'key' => 'ok', 'value' => 'OK']);
-        Translation::create(['platform' => 'web', 'lang' => 'en_US', 'group' => 'common', 'key' => 'cancel', 'value' => 'Cancel']);
+        Translation::create(['platform' => json_encode(['web']), 'lang' => 'en_US', 'group' => 'common', 'key' => 'cancel', 'value' => 'Cancel']);
 
         $jsonContent = json_encode([
             'common' => [
@@ -705,7 +704,7 @@ describe('Translation Import', function () {
         $response->assertStatus(200)
             ->assertJsonPath('data.lang', 'en_US')
             ->assertJsonPath('data.imported', 2)
-            ->assertJsonPath('data.updated', 2)  
+            ->assertJsonPath('data.updated', 2) 
             ->assertJsonPath('data.skipped', 0)
             ->assertJsonPath('data.total', 4);
     });
@@ -747,7 +746,7 @@ describe('Translation Export', function () {
     test('can export translations for a lang', function () {
         // Create sample translations
         Translation::create([
-            'platform' => 'web',
+            'platform' => json_encode(['web']),
             'lang' => 'en_US',
             'group' => 'common',
             'key' => 'ok',
@@ -755,7 +754,7 @@ describe('Translation Export', function () {
         ]);
 
         Translation::create([
-            'platform' => 'web',
+            'platform' => json_encode(['web']),
             'lang' => 'en_US',
             'group' => 'common',
             'key' => 'cancel',
@@ -787,7 +786,7 @@ describe('Translation Export', function () {
     test('exports translations with correct nested structure', function () {
         Translation::create([
             'lang' => 'en_US',
-            'platform' => 'web',
+            'platform' => json_encode(['web']),
             'group' => 'common',
             'key' => 'save',
             'value' => 'Save',
@@ -795,7 +794,7 @@ describe('Translation Export', function () {
 
         Translation::create([
             'lang' => 'en_US',
-            'platform' => 'web',
+            'platform' => json_encode(['web']),
             'group' => 'auth',
             'key' => 'login',
             'value' => 'Log In',
@@ -803,7 +802,7 @@ describe('Translation Export', function () {
 
         Translation::create([
             'lang' => 'en_US',
-            'platform' => 'web',
+            'platform' => json_encode(['web']),
             'group' => 'auth',
             'key' => 'logout',
             'value' => 'Log Out',
@@ -826,7 +825,7 @@ describe('Translation Export', function () {
     test('exports deeply nested translation groups', function () {
         Translation::create([
             'lang' => 'en_US',
-            'platform' => 'web',
+            'platform' => json_encode(['web']),
             'group' => 'validation.custom.email',
             'key' => 'required',
             'value' => 'Email is required',
@@ -835,7 +834,7 @@ describe('Translation Export', function () {
         Translation::create([
             'lang' => 'en_US',
             'group' => 'validation.custom.password',
-            'platform' => 'web',
+            'platform' => json_encode(['web']),
             'key' => 'min',
             'value' => 'Password must be at least 8 characters',
         ]);
@@ -868,7 +867,7 @@ describe('Translation Export', function () {
         Translation::create([
             'lang' => 'en_US',
             'group' => 'common',
-            'platform' => 'web',
+            'platform' => json_encode(['web']),
             'key' => 'ok',
             'value' => 'OK',
         ]);
@@ -877,7 +876,7 @@ describe('Translation Export', function () {
         Translation::create([
             'lang' => 'es_ES',
             'group' => 'common',
-            'platform' => 'web',
+            'platform' => json_encode(['web']),
             'key' => 'ok',
             'value' => 'Aceptar',
         ]);
@@ -897,7 +896,7 @@ describe('Translation Export', function () {
     test('exports translations with null groups as top-level keys', function () {
         Translation::create([
             'lang' => 'en_US',
-            'platform' => 'desktop',
+            'platform' => json_encode(['desktop']),
             'group' => null,
             'key' => 'app_name',
             'value' => 'My Application',
@@ -906,7 +905,7 @@ describe('Translation Export', function () {
         Translation::create([
             'lang' => 'en_US',
             'group' => 'common',
-            'platform' => 'desktop',
+            'platform' => json_encode(['desktop']),
             'key' => 'ok',
             'value' => 'OK',
         ]);
@@ -928,7 +927,7 @@ describe('Translation Export', function () {
             Translation::create([
                 'lang' => 'en_US',
                 'group' => 'group_' . ($i % 10),
-                'platform' => 'web',
+                'platform' => json_encode(['web']),
                 'key' => 'key_' . $i,
                 'value' => 'Value ' . $i,
             ]);
@@ -949,7 +948,7 @@ describe('Translation Export', function () {
     test('preserves special characters in exported translations', function () {
         Translation::create([
             'lang' => 'en_US',
-            'platform' => 'web',
+            'platform' => json_encode(['web']),
             'group' => 'special',
             'key' => 'unicode',
             'value' => 'Hello 你好 مرحبا',
@@ -957,7 +956,7 @@ describe('Translation Export', function () {
 
         Translation::create([
             'lang' => 'en_US',
-            'platform' => 'web',
+            'platform' => json_encode(['web']),
             'group' => 'special',
             'key' => 'quotes',
             'value' => 'He said "Hello"',
@@ -965,7 +964,7 @@ describe('Translation Export', function () {
 
         Translation::create([
             'lang' => 'en_US',
-            'platform' => 'web',
+            'platform' => json_encode(['web']),
             'group' => 'special',
             'key' => 'apostrophe',
             'value' => "It's working",
@@ -973,7 +972,7 @@ describe('Translation Export', function () {
 
         Translation::create([
             'lang' => 'en_US',
-            'platform' => 'web',
+            'platform' => json_encode(['web']),
             'group' => 'special',
             'key' => 'html',
             'value' => '<strong>Bold</strong>',
@@ -995,7 +994,7 @@ describe('Translation Export', function () {
         Translation::create([
             'lang' => 'en_US',
             'group' => 'common',
-            'platform' => 'web',
+            'platform' => json_encode(['web']),
             'key' => 'ok',
             'value' => 'OK',
         ]);
@@ -1036,7 +1035,7 @@ describe('Translation Export', function () {
                     'lang' => 'en_US',
                     'group' => $group,
                     'key' => $key,
-                    'platform' => 'web',
+                    'platform' => json_encode(['web']),
                     'value' => $value,
                 ]);
             }
@@ -1053,12 +1052,12 @@ describe('Translation Export', function () {
 
     test('handles multiple langs independently on export', function () {
         // Create English translations
-        Translation::create(['platform' => 'web','lang' => 'en_US', 'group' => 'common', 'key' => 'ok', 'value' => 'OK']);
-        Translation::create(['platform' => 'web','lang' => 'en_US', 'group' => 'common', 'key' => 'cancel', 'value' => 'Cancel']);
+        Translation::create(['platform' => json_encode(['web']),'lang' => 'en_US', 'group' => 'common', 'key' => 'ok', 'value' => 'OK']);
+        Translation::create(['platform' => json_encode(['web']),'lang' => 'en_US', 'group' => 'common', 'key' => 'cancel', 'value' => 'Cancel']);
 
         // Create Spanish translations
-        Translation::create(['platform' => 'web','lang' => 'es_ES', 'group' => 'common', 'key' => 'ok', 'value' => 'Aceptar']);
-        Translation::create(['platform' => 'web','lang' => 'es_ES', 'group' => 'common', 'key' => 'cancel', 'value' => 'Cancelar']);
+        Translation::create(['platform' => json_encode(['web']),'lang' => 'es_ES', 'group' => 'common', 'key' => 'ok', 'value' => 'Aceptar']);
+        Translation::create(['platform' => json_encode(['web']),'lang' => 'es_ES', 'group' => 'common', 'key' => 'cancel', 'value' => 'Cancelar']);
 
         // Export English
         $enResponse = actingAs($this->user)->getJson('/api/translations/export/en_US');
@@ -1077,9 +1076,9 @@ describe('Translation Export', function () {
 
     test('exports translations in consistent order', function () {
         // Create translations in random order
-        Translation::create(['platform' => 'web', 'lang' => 'en_US', 'group' => 'z_group', 'key' => 'z_key', 'value' => 'Z Value']);
-        Translation::create(['platform' => 'web', 'lang' => 'en_US', 'group' => 'a_group', 'key' => 'a_key', 'value' => 'A Value']);
-        Translation::create(['platform' => 'web', 'lang' => 'en_US', 'group' => 'common', 'key' => 'ok', 'value' => 'OK']);
+        Translation::create(['platform' => json_encode(['web']), 'lang' => 'en_US', 'group' => 'z_group', 'key' => 'z_key', 'value' => 'Z Value']);
+        Translation::create(['platform' => json_encode(['web']), 'lang' => 'en_US', 'group' => 'a_group', 'key' => 'a_key', 'value' => 'A Value']);
+        Translation::create(['platform' => json_encode(['web']), 'lang' => 'en_US', 'group' => 'common', 'key' => 'ok', 'value' => 'OK']);
 
         $response = actingAs($this->user)->getJson('/api/translations/export/en_US');
 
@@ -1092,9 +1091,9 @@ describe('Translation Export', function () {
     });
 
     test('handles export with mixed group depths', function () {
-        Translation::create(['platform' => 'web', 'lang' => 'en_US', 'group' => 'simple', 'key' => 'key1', 'value' => 'Value 1']);
-        Translation::create(['platform' => 'web', 'lang' => 'en_US', 'group' => 'nested.level1', 'key' => 'key2', 'value' => 'Value 2']);
-        Translation::create(['platform' => 'web', 'lang' => 'en_US', 'group' => 'nested.level1.level2', 'key' => 'key3', 'value' => 'Value 3']);
+        Translation::create(['platform' => json_encode(['web']), 'lang' => 'en_US', 'group' => 'simple', 'key' => 'key1', 'value' => 'Value 1']);
+        Translation::create(['platform' => json_encode(['web']), 'lang' => 'en_US', 'group' => 'nested.level1', 'key' => 'key2', 'value' => 'Value 2']);
+        Translation::create(['platform' => json_encode(['web']), 'lang' => 'en_US', 'group' => 'nested.level1.level2', 'key' => 'key3', 'value' => 'Value 3']);
 
         $response = actingAs($this->user)->getJson('/api/translations/export/en_US');
 
@@ -1110,9 +1109,9 @@ describe('Translation Export', function () {
 
     test('export produces valid JSON that can be re-imported', function () {
         // Create sample translations
-        Translation::create(['platform' => 'web', 'lang' => 'en_US', 'group' => 'common', 'key' => 'ok', 'value' => 'OK']);
-        Translation::create(['platform' => 'web', 'lang' => 'en_US', 'group' => 'common', 'key' => 'cancel', 'value' => 'Cancel']);
-        Translation::create(['platform' => 'web', 'lang' => 'en_US', 'group' => 'auth', 'key' => 'login', 'value' => 'Log In']);
+        Translation::create(['platform' => json_encode(['web']), 'lang' => 'en_US', 'group' => 'common', 'key' => 'ok', 'value' => 'OK']);
+        Translation::create(['platform' => json_encode(['web']), 'lang' => 'en_US', 'group' => 'common', 'key' => 'cancel', 'value' => 'Cancel']);
+        Translation::create(['platform' => json_encode(['web']), 'lang' => 'en_US', 'group' => 'auth', 'key' => 'login', 'value' => 'Log In']);
 
         $response = actingAs($this->user)->getJson('/api/translations/export/en_US');
 
@@ -1131,7 +1130,7 @@ describe('Translation Export', function () {
     });
 
     test('returns correct response structure on successful export', function () {
-        Translation::create(['platform' => 'web', 'lang' => 'en_US', 'group' => 'common', 'key' => 'ok', 'value' => 'OK']);
+        Translation::create(['platform' => json_encode(['web']), 'lang' => 'en_US', 'group' => 'common', 'key' => 'ok', 'value' => 'OK']);
 
         $response = actingAs($this->user)->getJson('/api/translations/export/en_US');
 
@@ -1152,7 +1151,7 @@ describe('Translation Export', function () {
     });
 
     test('handles lang parameter case sensitivity', function () {
-        Translation::create(['platform' => 'web', 'lang' => 'en_US', 'group' => 'common', 'key' => 'ok', 'value' => 'OK']);
+        Translation::create(['platform' => json_encode(['web']), 'lang' => 'en_US', 'group' => 'common', 'key' => 'ok', 'value' => 'OK']);
 
         // Should work with exact match
         $response = actingAs($this->user)->getJson('/api/translations/export/en_US');
@@ -1167,7 +1166,7 @@ describe('Translation Export', function () {
     });
 
     test('exports single translation correctly', function () {
-        Translation::create(['platform' => 'web', 'lang' => 'en_US', 'group' => 'app', 'key' => 'name', 'value' => 'My App']);
+        Translation::create(['platform' => json_encode(['web']), 'lang' => 'en_US', 'group' => 'app', 'key' => 'name', 'value' => 'My App']);
 
         $response = actingAs($this->user)->getJson('/api/translations/export/en_US');
 
@@ -1181,8 +1180,8 @@ describe('Translation Export', function () {
     });
 
     test('handles translations with numeric-like keys', function () {
-        Translation::create(['platform' => 'web', 'lang' => 'en_US', 'group' => 'errors', 'key' => '404', 'value' => 'Not Found']);
-        Translation::create(['platform' => 'web', 'lang' => 'en_US', 'group' => 'errors', 'key' => '500', 'value' => 'Server Error']);
+        Translation::create(['platform' => json_encode(['web']), 'lang' => 'en_US', 'group' => 'errors', 'key' => '404', 'value' => 'Not Found']);
+        Translation::create(['platform' => json_encode(['web']), 'lang' => 'en_US', 'group' => 'errors', 'key' => '500', 'value' => 'Server Error']);
 
         $response = actingAs($this->user)->getJson('/api/translations/export/en_US');
 
@@ -1196,8 +1195,8 @@ describe('Translation Export', function () {
     });
 
     test('exports translations with empty string values', function () {
-        Translation::create(['platform' => 'web', 'lang' => 'en_US', 'group' => 'common', 'key' => 'empty', 'value' => '']);
-        Translation::create(['platform' => 'web', 'lang' => 'en_US', 'group' => 'common', 'key' => 'ok', 'value' => 'OK']);
+        Translation::create(['platform' => json_encode(['web']), 'lang' => 'en_US', 'group' => 'common', 'key' => 'empty', 'value' => '']);
+        Translation::create(['platform' => json_encode(['web']), 'lang' => 'en_US', 'group' => 'common', 'key' => 'ok', 'value' => 'OK']);
 
         $response = actingAs($this->user)->getJson('/api/translations/export/en_US');
 
@@ -1212,10 +1211,10 @@ describe('Translation Export', function () {
     test('export and re-import produces identical data', function () {
         // Create original translations
         $originalTranslations = [
-            ['platform' => 'web' ,'lang' => 'en_US', 'group' => 'common', 'key' => 'ok', 'value' => 'OK'],
-            ['platform' => 'web' ,'lang' => 'en_US', 'group' => 'common', 'key' => 'cancel', 'value' => 'Cancel'],
-            ['platform' => 'web' ,'lang' => 'en_US', 'group' => 'auth', 'key' => 'login', 'value' => 'Log In'],
-            ['platform' => 'web' ,'lang' => 'en_US', 'group' => 'validation.errors', 'key' => 'required', 'value' => 'Required field'],
+            ['platform' => json_encode(['web']) ,'lang' => 'en_US', 'group' => 'common', 'key' => 'ok', 'value' => 'OK'],
+            ['platform' => json_encode(['web']) ,'lang' => 'en_US', 'group' => 'common', 'key' => 'cancel', 'value' => 'Cancel'],
+            ['platform' => json_encode(['web']) ,'lang' => 'en_US', 'group' => 'auth', 'key' => 'login', 'value' => 'Log In'],
+            ['platform' => json_encode(['web']) ,'lang' => 'en_US', 'group' => 'validation.errors', 'key' => 'required', 'value' => 'Required field'],
         ];
 
         foreach ($originalTranslations as $translation) {

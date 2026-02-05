@@ -24,8 +24,8 @@ class CreateTranslationRequest extends FormRequest
         return [
             'key' => 'required',
             'group' => 'nullable',
-            'lang' => 'required|regex:/^[a-z]{2}(_[A-Z]{2})?$/i', 
-            'value' => 'required', 
+            'lang' => 'required|regex:/^[a-z]{2}(_[A-Z]{2})?$/i',
+            'value' => 'required',
             'platform' => 'required|in:mobile,web,desktop'
         ];
     }

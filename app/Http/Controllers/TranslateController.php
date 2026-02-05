@@ -16,6 +16,7 @@ use App\TranslationParserTrait;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Laravel\Boost\Install\Enums\Platform;
 
 class TranslateController extends Controller
 {
@@ -27,13 +28,25 @@ class TranslateController extends Controller
             $query->whereLike('lang', $request->query('lang'));
         })
         ->when($request->query('platform'), function ($query) use ($request) {
-            $query->whereIn('platform', [$request->query('platform')]);
+            $platforms = explode(',', $request->query('platform'));
+            $query->where(function ($inner_query) use ($platforms) {
+                foreach ($platforms as $platform) {
+                    $inner_query->orWhereJsonContains('platform', $platform);
+                }
+            });
         })
         ->when($request->query('key'), function ($query) use ($request) {
             $search_term = $request->query('key');
-            $query->whereLike('value', "%$search_term%")
+            $query->where(function ($inner_query) use ($search_term) {
+                $inner_query->whereLike('value', "%$search_term%")
                     ->OrWhereLike('key', "%$search_term%");
-        })->paginate(15);
+            });
+        })
+        ->when($request->query('value'), function ($query) use ($request) {
+            $search_term = $request->query('value');
+            $query->whereLike('value', "%$search_term%");
+        })->paginate($request->query('per_page', 15));
+
 
         return $translations->toResourceCollection();
     }
@@ -47,7 +60,10 @@ class TranslateController extends Controller
     {
         $fields = $request->validated();
 
-        $translation = Translation::create($fields);
+        $translation = Translation::create([
+            ...$fields,
+            'platform' => json_encode([$fields['platform']])
+        ]);
 
         return response()->json([
             'message' => 'Successfully Created new Translation',
@@ -179,18 +195,19 @@ class TranslateController extends Controller
             ], 404);
         }
 
-        $json_content = json_encode($this->groupTranslations($translations));
+        $json_content = json_encode($this->groupTranslations($translations, !$request->query('flatten', false)));
         $file_name = "locale_$lang.json";
-        Storage::put($file_name, $json_content);
+        Storage::disk('public')->put($file_name, $json_content);
+
+        if ($request->query('download_file', false)) {
+            return Storage::download("$file_name", now()->timestamp . '_' . $file_name);
+        }
 
         return response()->json([
             'success' => true,
             'lang' => $lang,
-            'data' => $this->groupTranslations($translations)
+            'data' => $this->groupTranslations($translations, !$request->query('flatten', false)),
+            'timestamp' => now()->format('d/m/Y H:i:s')
         ], 200);
-
-        // return response()
-        //         ->download(Storage::path($file_name), $file_name, ['Content-Type' => 'application/json'])
-        //         ->deleteFileAfterSend(true);
     }
 }

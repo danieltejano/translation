@@ -24,8 +24,8 @@ class UpdateTranslationRequest extends FormRequest
         return [
             'key' => 'required',
             'group' => 'nullable',
-            'lang' => 'nullable|regex:/^[a-z]{2}(_[A-Z]{2})?$/i', 
-            'value' => 'required', 
+            'lang' => 'nullable|regex:/^[a-z]{2}(_[A-Z]{2})?$/i',
+            'value' => 'required',
             'platform' => 'nullable|in:mobile,web,desktop'
         ];
     }

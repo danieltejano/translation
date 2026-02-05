@@ -52,7 +52,7 @@ function recreateTranslationsFromExport(array $data, string $platform, string $l
         } else {
             Translation::create([
                 'lang' => $lang,
-                'platform' => $platform,
+                'platform' => json_encode($platform),
                 'group' => $parentGroup,
                 'key' => $key,
                 'value' => $value,
