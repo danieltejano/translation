@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\Translation;
+
 /*
 |--------------------------------------------------------------------------
 | Test Case
@@ -41,7 +43,20 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+function recreateTranslationsFromExport(array $data, string $platform, string $lang, ?string $parentGroup = null): void
 {
-    // ..
+    foreach ($data as $key => $value) {
+        if (is_array($value)) {
+            $group = $parentGroup ? "{$parentGroup}.{$key}" : $key;
+            recreateTranslationsFromExport($value, $platform, $lang, $group);
+        } else {
+            Translation::create([
+                'lang' => $lang,
+                'platform' => $platform,
+                'group' => $parentGroup,
+                'key' => $key,
+                'value' => $value,
+            ]);
+        }
+    }
 }
