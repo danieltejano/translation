@@ -38,6 +38,20 @@ This lean structure allows for rapid expansion and the addition of new features 
    docker compose up --build
    ```
 
+### Seeding 100k+ records
+   a Translation Seeder is present within the project and can be called via the database seed artisan command or via the artisan migrate fresh --seed command the seeder includes multiple languages as well as multiple locales like (en_US, pt_PL, pt_BR + 40 more). A Test User is included as well whenever the command is called.
+   ```bash
+   php artisan migrate --seed
+   ```
+
+   ```bash
+   php artisan migrate:fresh --seed
+   ```
+   or if database clearing or migration is not needed
+   ```bash
+   php artisan db:seed
+   ```
+
 ### Running Tests
   To Run tests please use the Laravel built in artisan command 
   ```bash
