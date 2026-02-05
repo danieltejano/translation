@@ -24,7 +24,12 @@ class TranslateController extends Controller
     public function index(Request $request)
     {
         $translations = Translation::when($request->query('lang'), function ($query) use ($request) {
-            $query->whereLike('lang', $request->query('lang'));
+            $search_term = $request->query('lang', '');
+            $query->whereLike('lang', "%$search_term%");
+        })
+        ->when($request->query('group'), function ($query) use ($request) {
+            $search_term = $request->query('group');
+            $query->whereLike('group', "%$search_term%");
         })
         ->when($request->query('platform'), function ($query) use ($request) {
             $platforms = explode(',', $request->query('platform'));
