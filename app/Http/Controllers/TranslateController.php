@@ -196,7 +196,7 @@ class TranslateController extends Controller
 
         $json_content = json_encode($this->groupTranslations($translations, !$request->query('flatten', false)));
         $file_name = "locale_$lang.json";
-        Storage::disk('public')->put($file_name, $json_content);
+        Storage::put($file_name, $json_content);
 
         if ($request->query('download_file', false)) {
             return Storage::download("$file_name", now()->timestamp . '_' . $file_name);
