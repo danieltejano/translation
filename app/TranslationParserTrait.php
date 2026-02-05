@@ -25,4 +25,30 @@ trait TranslationParserTrait
 
         return $translations;
     }
+
+    private function groupTranslations($translations) : array
+    {
+        $data = [];
+        foreach ($translations as $translation) {
+            if ($translation->group) {
+                // Handle nested groups
+                $groups = explode('.', $translation->group);
+                $current = &$data;
+
+                foreach ($groups as $group) {
+                    if (!isset($current[$group])) {
+                        $current[$group] = [];
+                    }
+                    $current = &$current[$group];
+                }
+
+                $current[$translation->key] = $translation->value;
+            } else {
+                // Top-level key
+                $data[$translation->key] = $translation->value;
+            }
+        }
+
+        return $data;
+    }
 }
