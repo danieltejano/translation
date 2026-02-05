@@ -2,31 +2,34 @@
 
 namespace App\Http\Controllers;
 
+use Exception;
 use Illuminate\Http\Request;
 use App\Http\Requests\{
     CreateTranslationRequest,
     ImportTranslationRequest,
+    ExportTranslationRequest,
     UpdateTranslationRequest,
 };
 use App\Models\Translation;
 use App\Http\Resources\TranslationResource;
 use App\TranslationParserTrait;
-use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class TranslateController extends Controller
 {
     use TranslationParserTrait;
 
-    public function index(Request $request){
-        $translations = Translation::when($request->query('lang'), function($query) use($request){
+    public function index(Request $request)
+    {
+        $translations = Translation::when($request->query('lang'), function ($query) use ($request) {
             $query->whereLike('lang', $request->query('lang'));
         })
-        ->when($request->query('platform'), function($query) use ($request){
+        ->when($request->query('platform'), function ($query) use ($request) {
             $query->whereIn('platform', [$request->query('platform')]);
         })
-        ->when($request->query('key'), function($query) use($request){
+        ->when($request->query('key'), function ($query) use ($request) {
             $search_term = $request->query('key');
             $query->whereLike('value', "%$search_term%")
                     ->OrWhereLike('key', "%$search_term%");
@@ -35,23 +38,26 @@ class TranslateController extends Controller
         return $translations->toResourceCollection();
     }
 
-    public function show(Translation $translation){
+    public function show(Translation $translation)
+    {
         return new TranslationResource($translation);
     }
 
-    public function create(CreateTranslationRequest $request){
+    public function create(CreateTranslationRequest $request)
+    {
         $fields = $request->validated();
 
         $translation = Translation::create($fields);
 
         return response()->json([
             'message' => 'Successfully Created new Translation',
-            'key' => $translation->key, 
-            'translation' => $translation->value, 
+            'key' => $translation->key,
+            'translation' => $translation->value,
         ]);
     }
 
-    public function update(UpdateTranslationRequest $request, Translation $translation){
+    public function update(UpdateTranslationRequest $request, Translation $translation)
+    {
         $fields = $request->validated();
 
         $original_translation = $translation->getAttributes();
@@ -66,14 +72,15 @@ class TranslateController extends Controller
         ]);
     }
 
-    public function delete(Translation $translation){
+    public function delete(Translation $translation)
+    {
         $translation->delete();
 
         return response()->json([
             'message' => "Successfully Deleted Translation for $translation->key"
         ]);
     }
-    
+
     public function import(ImportTranslationRequest $request)
     {
         $fields = $request->validated();
@@ -83,15 +90,14 @@ class TranslateController extends Controller
         $language = $request->input('lang');
         $platform = $request->input('platform');
         $policy = $request->input('replace_existing', false);
-    
 
         // $file_path = file_get_contents($file->getRealPath());
         $json_content = json_decode($file->get(), true);
 
         // Should validte JSON Structure here
-        if(json_last_error() !== JSON_ERROR_NONE){
+        if (json_last_error() !== JSON_ERROR_NONE) {
             return response()->json([
-                'success' => false, 
+                'success' => false,
                 'message' => 'Invalid JSON File ' . json_last_error_msg()
             ], 422);
         }
@@ -102,45 +108,40 @@ class TranslateController extends Controller
 
         // Should check if parsed file is empty.
 
-        if(empty($translations)){
+        if (empty($translations)) {
             return response()->json([
-                'success' => false, 
+                'success' => false,
                 'message' => 'No valid translations found in the file.'
             ], 422);
         }
 
         $policy_string = $policy ? 'true' : 'false';
-        
-        
         Log::info("Begining Translation with Replace Existing Policy set to $policy_string");
 
         DB::beginTransaction();
 
-        try{ 
-
-
+        try {
             $imported = 0;
             $updated = 0;
             $skipped = 0;
 
-            foreach($translations as $translation){
+            foreach ($translations as $translation) {
                 $existing = Translation::where('lang', $translation['lang'])
                                         ->where('key', $translation['key'])
                                         ->first();
                 $key = $translation['key'];
                 $value = $translation['value'];
                 $lang = $translation['lang'];
-                if($existing){
-
-                    if($policy){
+                if ($existing) {
+                    if ($policy) {
                         $existing->update(['value' => $translation['value']]);
                         Log::info("Updated Translation $key for $lang with value $value");
                         $updated++;
-                    }else{
+                    } else {
                         Log::alert("Skipping Translation $key for $lang with value $value");
                         $skipped++;
                     }
-                }else{
+                } else {
                     Translation::create($translation);
                     Log::info("Created Translation $key for $lang with value $value");
                     $imported++;
@@ -150,24 +151,46 @@ class TranslateController extends Controller
             DB::commit();
 
             return response()->json([
-                'success' => true, 
+                'success' => true,
                 'message' => 'Translations imported successfully.',
                 'data' => [
-                    'lang' => $language, 
+                    'lang' => $language,
                     'imported' => $imported,
-                    'updated' => $updated, 
-                    'skipped' => $skipped, 
+                    'updated' => $updated,
+                    'skipped' => $skipped,
                     'total' => count($translations)
                 ]
             ], 200);
-        }catch(Exception $e){
+        } catch (Exception $e) {
             DB::rollback();
 
             throw $e;
         }
-        
-    
     }
 
-    
+    public function export(Request $request, string $lang)
+    {
+        $translations = Translation::where('lang', $lang)->get();
+
+        if ($translations->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => "No translations found for lang: $lang"
+            ], 404);
+        }
+
+        $json_content = json_encode($this->groupTranslations($translations));
+        $file_name = "locale_$lang.json";
+        Storage::put($file_name, $json_content);
+
+        return response()->json([
+            'success' => true,
+            'lang' => $lang,
+            'data' => $this->groupTranslations($translations)
+        ], 200);
+
+        // return response()
+        //         ->download(Storage::path($file_name), $file_name, ['Content-Type' => 'application/json'])
+        //         ->deleteFileAfterSend(true);
+    }
 }
