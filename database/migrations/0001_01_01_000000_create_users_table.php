@@ -34,6 +34,8 @@ return new class extends Migration
             $table->text('user_agent')->nullable();
             $table->longText('payload');
             $table->integer('last_activity')->index();
+
+            $table->index(['id', 'user_id'], 'session_user_index');
         });
     }
 

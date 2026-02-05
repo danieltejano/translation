@@ -25,6 +25,7 @@ class LoginRequest extends FormRequest
         return [
             'email' => "required",
             'password' => new Password(8)->default(),
+            'device_name' => 'nullable',
         ];
     }
 }
