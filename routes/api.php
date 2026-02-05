@@ -14,7 +14,7 @@ Route::middleware('auth:sanctum')
         Route::get('{translation}', [TranslateController::class, 'show'])->name('translation.show');
         Route::post('', [TranslateController::class, 'create'])->name('translation.create');
         Route::put('{translation}', [TranslateController::class, 'update'])->name('translation.update');
-        Route::delete('{translation}', [TranslateController::class, 'delete'])->name('translation.show');
+        Route::delete('{translation}', [TranslateController::class, 'delete'])->name('translation.delete');
     });
 
 
