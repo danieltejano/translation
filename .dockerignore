@@ -1,0 +1,18 @@
+# Source Control
+.git
+.gitignore
+
+# Laravel specific
+node_modules
+vendor
+.env
+.phpunit.result.cache
+storage/*.key
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/views/*.php
+storage/logs/*.log
+
+# Docker specific
+Dockerfile
+.dockerignore

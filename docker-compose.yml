@@ -22,6 +22,7 @@ services:
       - DB_USERNAME=${DB_DATABASE:-laravel}
       - DB_PASSWORD=${DB_PASSWORD:-secret}
       - CACHE_STORE=file
+      - SESSION_DRIVER=file
   
   nginx:
     image: nginx:alpine
