@@ -10,7 +10,8 @@ RUN apt-get update && apt-get install -y \
     libxml2-dev \ 
     libpq-dev \
     zip \
-    unzip
+    unzip \
+    netcat-openbsd
 
 RUN apt-get clean
 
@@ -19,6 +20,12 @@ RUN docker-php-ext-install pdo pdo_pgsql pgsql mbstring exif pcntl bcmath gd
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 COPY . /var/www/html
+
+COPY docker/api.entrypoint.sh /usr/local/bin/api.entrypoint.sh
+
+RUN chmod +x /usr/local/bin/api.entrypoint.sh
+
+ENTRYPOINT ["/usr/local/bin/api.entrypoint.sh"]
 
 RUN mkdir -p /var/www/html/storage \
     /var/www/html/bootstrap/cache \
@@ -30,9 +37,8 @@ RUN mkdir -p /var/www/html/storage \
     # && chmod -R 755 /var/www/html/storage \
     && chmod -R 775 /var/www/html/bootstrap/cache /var/www/html/storage
 
-RUN php artisan optimize:clear
+RUN composer install
 
-RUN php artisan optimize
 
 EXPOSE 9000
 
