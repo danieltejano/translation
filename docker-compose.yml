@@ -15,11 +15,12 @@ services:
     depends_on:
       - postgres-db
     environment:
+      - APP_DEBUG=true
       - DB_CONNECTION=pgsql
       - DB_HOST=postgres-db
       - DB_PORT=5432
       - DB_DATABASE=${DB_DATABASE:-laravel}
-      - DB_USERNAME=${DB_DATABASE:-laravel}
+      - DB_USERNAME=${DB_USERNAME:-laravel}
       - DB_PASSWORD=${DB_PASSWORD:-secret}
       - CACHE_STORE=file
       - SESSION_DRIVER=file
